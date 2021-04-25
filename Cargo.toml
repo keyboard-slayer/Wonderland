@@ -1,0 +1,11 @@
+[package]
+name = "uac-bypass"
+version = "0.1.0"
+authors = ["Keyboard Slayer"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+winreg = "0.8"
+is_elevated = "0.1.2"
