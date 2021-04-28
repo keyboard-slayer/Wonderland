@@ -33,14 +33,39 @@ pub fn resize_disk(letter: &str, part_size: usize) -> io::Result<()>
 
     match size_str.parse::<f64>()
     {
-        Ok(raw_size) => size = raw_size / 1073741824.0,
+        Ok(raw_size) => size = raw_size / 1048576.0,
         Err(_) => panic!()
     }
 
     let shrink_size: usize = size.floor() as usize - part_size;
 
     Command::new("powershell")
-            .args(&["-command", "Resize-Partition", "-DriveLetter", letter, "-Size", format!("({}GB)", shrink_size).as_str()])
+            .args(&["-command", "Resize-Partition", "-DriveLetter", letter, "-Size", format!("({}MB)", shrink_size).as_str()])
+            .spawn()?;
+
+    Ok(())
+}
+
+pub fn create_part(letter: &str, part_size: usize) -> io::Result<()>
+{
+    let drive_letter = Command::new("powershell")
+                                .args(&["-command", "(", "Get-Partition", "-Drive", "C", ").DiskNumber"])
+                                .output()?;
+
+    let mut drive_str = String::from_utf8(drive_letter.stdout).unwrap();
+    drive_str.retain(|c| !c.is_whitespace());
+
+    Command::new("powershell")
+            .args(&["-command", "New-Partition", "-DiskNumber", &drive_str, "-Size", format!("{}MB", part_size).as_str(), "-DriveLetter", letter])
+            .spawn()?;
+
+    Ok(())
+}
+
+pub fn format_part(letter: &str, file_system: &str) -> io::Result<()>
+{
+    Command::new("powershell")
+            .args(&["-command", "Format-Volume", "-DriveLetter", letter, "-FileSystem", file_system])
             .spawn()?;
 
     Ok(())

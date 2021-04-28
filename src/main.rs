@@ -42,8 +42,10 @@ fn main() -> io::Result<()>
                 .spawn()?;
     }
 
-    diskutils::resize_disk("C", 16)?;
+    diskutils::resize_disk("C", 16384)?;
 
+    diskutils::create_part("W", 512)?; /* Boot Partition UEFI */
+    diskutils::format_part("W", "FAT32")?;
 
     Ok(())
 }
