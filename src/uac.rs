@@ -41,7 +41,7 @@ pub fn uac() -> io::Result<()>
 {
     let raw_path = current_exe()?;
     let path = raw_path.to_str().unwrap();
-    
+
     let data = RegValue {vtype: REG_DWORD, bytes: vec![0]};
 
     check_create("Classes")?;
